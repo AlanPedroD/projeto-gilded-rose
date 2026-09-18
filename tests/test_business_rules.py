@@ -201,6 +201,26 @@ class ExtensibilidadeTest(unittest.TestCase):
         finally:
             _updaters.remove(FrozenItemUpdater)
 
+    def test_recusa_um_item_reconhecido_por_dois_updaters(self):
+        """A regra de um item nao pode depender da ordem das classes no arquivo."""
+        from gilded_rose import register
+        from gilded_rose.registry import _updaters
+        from gilded_rose.updaters import StandardItemUpdater
+
+        @register
+        class ConjuredCheeseUpdater(StandardItemUpdater):
+            @classmethod
+            def matches(cls, name):
+                return name.startswith("Conjured")
+
+        try:
+            with self.assertRaises(LookupError) as raised:
+                GildedRose([Item("Conjured Mana Cake", 5, 20)]).update_quality()
+            self.assertIn("ConjuredItemUpdater", str(raised.exception))
+            self.assertIn("ConjuredCheeseUpdater", str(raised.exception))
+        finally:
+            _updaters.remove(ConjuredCheeseUpdater)
+
     def test_itens_desconhecidos_usam_a_regra_padrao(self):
         from gilded_rose.updaters import StandardItemUpdater
         from gilded_rose import updater_for

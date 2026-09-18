@@ -14,8 +14,6 @@ import unittest
 from gilded_rose import GildedRose, Item
 from legacy import gilded_rose as legacy
 
-# O legado nao conhece itens conjurados; eles sao a feature nova e por isso
-# ficam de fora da comparacao (a divergencia e testada em test_business_rules).
 LEGACY_ITEM_NAMES = [
     "+5 Dexterity Vest",
     "Elixir of the Mongoose",

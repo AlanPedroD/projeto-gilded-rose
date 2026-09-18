@@ -14,7 +14,6 @@ from .rules import (
     BACKSTAGE_FIRST_TIER_DAYS,
     BACKSTAGE_PASSES,
     BACKSTAGE_SECOND_TIER_DAYS,
-    CONJURED_PREFIX,
     EXPIRED_MULTIPLIER,
     LAST_SELLABLE_DAY,
     SULFURAS,
@@ -67,17 +66,6 @@ class StandardItemUpdater(ItemUpdater):
         if self._is_expired(item):
             return self.DAILY_DEGRADATION * EXPIRED_MULTIPLIER
         return self.DAILY_DEGRADATION
-
-
-@register
-class ConjuredItemUpdater(StandardItemUpdater):
-    """Item conjurado: degrada duas vezes mais rapido que um item comum."""
-
-    DAILY_DEGRADATION = StandardItemUpdater.DAILY_DEGRADATION * 2
-
-    @staticmethod
-    def matches(name: str) -> bool:
-        return name.startswith(CONJURED_PREFIX)
 
 
 @register

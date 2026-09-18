@@ -7,15 +7,15 @@ Enquanto o golden master prova "nada mudou", estes testes documentam
 import unittest
 
 from gilded_rose import GildedRose, Item
-from gilded_rose.rules import (
-    AGED_BRIE,
-    BACKSTAGE_PASSES,
-    LEGENDARY_QUALITY,
-    MAX_QUALITY,
-    SULFURAS,
-)
+from gilded_rose.rules import MAX_QUALITY
 
+# Os nomes sao repetidos aqui de proposito: o teste descreve a especificacao,
+# e nao deve passar so porque le a mesma constante que o codigo de producao.
 NORMAL_ITEM = "+5 Dexterity Vest"
+AGED_BRIE = "Aged Brie"
+SULFURAS = "Sulfuras, Hand of Ragnaros"
+BACKSTAGE_PASSES = "Backstage passes to a TAFKAL80ETC concert"
+LEGENDARY_QUALITY = 80
 
 CONJURED_ITEM = "Conjured Mana Cake"
 

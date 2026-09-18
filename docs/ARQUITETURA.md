@@ -24,7 +24,7 @@ níveis de aninhamento.
 | Módulo | Responsabilidade |
 | --- | --- |
 | `gilded_rose/item.py` | Guarda estado. Nenhuma regra de negócio. |
-| `gilded_rose/rules.py` | Constantes do domínio: limites, prazos, nomes. |
+| `gilded_rose/rules.py` | Constantes compartilhadas por todos os tipos: limites de qualidade, dia da venda. |
 | `gilded_rose/quality.py` | As três operações possíveis sobre qualidade. |
 | `gilded_rose/updaters.py` | Uma classe por regra de envelhecimento. |
 | `gilded_rose/registry.py` | Descobre qual updater cuida de cada item. |
@@ -59,22 +59,32 @@ prazo — e cada subclasse preenche só a parte que lhe cabe.
 
 ### 3. Adicionar um tipo novo não exige alterar código existente
 
-O registro funciona por decorator. Um tipo novo é uma classe nova:
+O registro funciona por decorator. Um tipo novo é uma classe nova, e tudo o
+que é específico dele — nome, taxas, faixas — mora nela:
 
 ```python
 @register
 class FrozenItemUpdater(ItemUpdater):
-    @staticmethod
-    def matches(name):
-        return name.startswith("Frozen")
+    NAME = "Frozen Yogurt"
 
     def _change_quality(self, item):
         pass  # itens congelados não mudam
 ```
 
-Não há um `if/elif` central para crescer a cada item. Itens não reconhecidos
-caem no updater padrão. É assim que os itens conjurados entraram, e há um teste
-que garante que continua funcionando.
+Por padrão, um updater reconhece o item cujo nome é exatamente `NAME`. Quem
+precisa de outra regra sobrescreve `matches` — é o caso do conjurado, que
+reconhece qualquer nome começado por `Conjured`.
+
+Não há um `if/elif` central para crescer a cada item, nem um arquivo de
+constantes para editar: `rules.py` guarda só o que todos os tipos compartilham.
+Itens não reconhecidos caem no updater padrão. É assim que os itens conjurados
+entraram — uma única adição, em um único lugar — e há um teste que garante que
+continua funcionando.
+
+**Dois updaters não podem reconhecer o mesmo item.** Se isso acontecer, o
+registro levanta `LookupError` nomeando as classes em conflito, em vez de
+escolher uma delas pela ordem em que aparecem no arquivo. A ambiguidade aparece
+no primeiro uso, e não como um bug silencioso de qualidade.
 
 ---
 
@@ -117,7 +127,7 @@ comportamento deliberada — e vai quebrar o teste de caracterização, como dev
 python3 -m unittest discover -s tests -t .
 ```
 
-São 36 testes, sem dependências além da biblioteca padrão.
+São 40 testes, sem dependências além da biblioteca padrão.
 
 **`test_characterization.py` prova que nada mudou.** Ele importa o código de
 `legacy/` e compara as duas implementações em cerca de nove mil combinações de

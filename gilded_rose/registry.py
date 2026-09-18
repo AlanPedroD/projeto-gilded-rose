@@ -27,10 +27,17 @@ def register_default(updater_class: Type) -> Type:
 
 
 def updater_for(item: Item):
-    """Devolve o updater responsavel por este item."""
-    for updater_class in _updaters:
-        if updater_class.matches(item.name):
-            return updater_class()
+    """Devolve o updater responsavel por este item.
+
+    Se mais de um updater reconhecer o item, a escolha dependeria da ordem em
+    que as classes foram declaradas. Em vez de escolher em silencio, recusa.
+    """
+    candidates = [cls for cls in _updaters if cls.matches(item.name)]
+    if len(candidates) > 1:
+        names = ", ".join(cls.__name__ for cls in candidates)
+        raise LookupError("%r e reconhecido por mais de um updater: %s" % (item.name, names))
+    if candidates:
+        return candidates[0]()
     if _default_updater is None:
         raise LookupError("Nenhum updater padrao registrado")
     return _default_updater()

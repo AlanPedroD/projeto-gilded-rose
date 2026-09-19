@@ -2,6 +2,13 @@
 
 Sistema de controle de estoque de uma estalagem fictícia chamada **Gilded Rose**, responsável por atualizar diariamente a **qualidade** e o **prazo de validade** (`sell_in`) dos itens vendidos.
 
+## 🧰 Tecnologias
+
+- **Linguagem:** Python 3.6+
+- **Testes automatizados:** [pytest](https://docs.pytest.org/)
+- **Cobertura de testes:** pytest-cov *(opcional)*
+- Nenhuma dependência externa é necessária para rodar o programa em si — apenas para os testes.
+
 ## 📋 O que o programa faz
 
 Todo item possui três atributos:
@@ -21,11 +28,14 @@ A cada "dia" que passa (ou seja, a cada chamada do método `update_quality`), o 
 | **Backstage passes** | Ganha qualidade conforme o show se aproxima (mais rápido faltando 10 e 5 dias). Após o show (`sell_in < 0`), a qualidade cai para **0** — o passe não vale mais nada. |
 | **Sulfuras, Hand of Ragnaros** | Item lendário: nunca muda de qualidade nem de `sell_in`. |
 
+> 🆕 **Funcionalidade planejada:** um novo item, **Conjured Mana Cake**, será adicionado futuramente. Regra prevista: perde qualidade **2x mais rápido** que um item comum (2 por dia, 4 por dia após vencido), respeitando o limite mínimo de 0.
+
 ## 📁 Estrutura do projeto
 
 ```
 .
 ├── gilded_rose_refatorado.py   # Código principal (classes Item e GildedRose)
+├── tests/                      # Testes automatizados (pytest)
 └── README.md                   # Este arquivo
 ```
 
@@ -64,6 +74,28 @@ for item in itens:
 ```
 
 Para simular vários dias, basta chamar `update_quality()` várias vezes (por exemplo, dentro de um loop `for` ou `while`).
+
+## 🧪 Como rodar os testes
+
+Os testes automatizados usam **pytest** e cobrem o comportamento de todos os tipos de item (comum, Aged Brie, Sulfuras, Backstage passes e Conjured).
+
+Instale as dependências de teste:
+
+```bash
+pip install pytest pytest-cov
+```
+
+Rode a suíte de testes:
+
+```bash
+pytest
+```
+
+Para verificar a cobertura de testes:
+
+```bash
+pytest --cov=gilded_rose_refatorado
+```
 
 ## 🚀 Funcionalidades
 

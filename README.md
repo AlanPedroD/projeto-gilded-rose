@@ -2,6 +2,12 @@
 
 Sistema de controle de estoque de uma estalagem fictícia chamada **Gilded Rose**, responsável por atualizar diariamente a **qualidade** e o **prazo de validade** (`sell_in`) dos itens vendidos.
 
+## 🧰 Tecnologias
+
+- **Linguagem:** Python 3.6+
+- **Testes automatizados:** [pytest](https://docs.pytest.org/)
+- **Cobertura de testes:** pytest-cov *(opcional)*
+- Nenhuma dependência externa é necessária para rodar o programa em si — apenas para os testes.
 Este repositório é a refatoração de um código legado: o comportamento original foi preservado e provado por testes, e sobre ele entrou uma feature nova, os itens conjurados.
 
 ## 📋 O que o programa faz
@@ -27,6 +33,8 @@ A cada "dia" que passa (ou seja, a cada chamada do método `update_quality`), o 
 As regras completas, com os casos de borda, estão em [docs/REGRAS_DE_NEGOCIO.md](docs/REGRAS_DE_NEGOCIO.md).
 
 > ⚠️ Em alguns casos o código original contradiz esse documento — por exemplo, um item comum que começa com qualidade 80 cai para 78, em vez de ser limitado a 50. A refatoração preserva o comportamento do código. Os quatro casos estão explicados em [docs/ARQUITETURA.md](docs/ARQUITETURA.md).
+
+> 🆕 **Funcionalidade planejada:** um novo item, **Conjured Mana Cake**, será adicionado futuramente. Regra prevista: perde qualidade **2x mais rápido** que um item comum (2 por dia, 4 por dia após vencido), respeitando o limite mínimo de 0.
 
 ## 📁 Estrutura do projeto
 

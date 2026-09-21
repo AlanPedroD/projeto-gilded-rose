@@ -7,17 +7,17 @@ Enquanto o golden master prova "nada mudou", estes testes documentam
 import unittest
 
 from gilded_rose import GildedRose, Item
-from gilded_rose.rules import (
-    AGED_BRIE,
-    BACKSTAGE_PASSES,
-    LEGENDARY_QUALITY,
-    MAX_QUALITY,
-    SULFURAS,
-)
+from gilded_rose.rules import MAX_QUALITY
 
+# Os nomes sao repetidos aqui de proposito: o teste descreve a especificacao,
+# e nao deve passar so porque le a mesma constante que o codigo de producao.
 NORMAL_ITEM = "+5 Dexterity Vest"
-CONJURED_ITEM = "Conjured Mana Cake"
+AGED_BRIE = "Aged Brie"
+SULFURAS = "Sulfuras, Hand of Ragnaros"
+BACKSTAGE_PASSES = "Backstage passes to a TAFKAL80ETC concert"
+LEGENDARY_QUALITY = 80
 
+CONJURED_ITEM = "Conjured Mana Cake"
 
 class ItemTestCase(unittest.TestCase):
     def update(self, name, sell_in, quality, days=1):
@@ -114,6 +114,9 @@ class ConjuredItemTest(ItemTestCase):
     def test_perde_quatro_de_qualidade_depois_de_vencido(self):
         self.assertUpdatesTo(CONJURED_ITEM, (-1, 20), (-2, 16))
 
+    def test_o_dia_da_venda_ainda_perde_dois(self):
+        self.assertUpdatesTo(CONJURED_ITEM, (1, 20), (0, 18))
+
     def test_no_dia_seguinte_ao_prazo_ja_perde_quatro(self):
         self.assertUpdatesTo(CONJURED_ITEM, (0, 20), (-1, 16))
 
@@ -123,15 +126,24 @@ class ConjuredItemTest(ItemTestCase):
     def test_a_qualidade_nunca_fica_negativa_quando_vencido(self):
         self.assertUpdatesTo(CONJURED_ITEM, (-5, 3), (-6, 0))
 
+    def test_a_qualidade_zerada_continua_zerada(self):
+        self.assertUpdatesTo(CONJURED_ITEM, (5, 0), (0, 0), days=5)
+
     def test_degrada_exatamente_o_dobro_de_um_item_comum(self):
-        for sell_in in (10, 0, -3):
+        for sell_in in (10, 1, 0, -3):
             with self.subTest(sell_in=sell_in):
                 normal = self.update(NORMAL_ITEM, sell_in, 40)
                 conjured = self.update(CONJURED_ITEM, sell_in, 40)
-                self.assertEqual(40 - 2 * (40 - normal.quality), conjured.quality)
+                self.assertEqual(2 * (40 - normal.quality), 40 - conjured.quality)
+                self.assertEqual(normal.sell_in, conjured.sell_in)
 
     def test_a_regra_vale_para_qualquer_item_conjurado(self):
         self.assertUpdatesTo("Conjured Sword of Testing", (10, 20), (9, 18))
+
+    def test_convive_com_os_outros_itens_no_inventario(self):
+        items = [Item(NORMAL_ITEM, 10, 20), Item(CONJURED_ITEM, 10, 20)]
+        GildedRose(items).update_quality()
+        self.assertEqual([19, 18], [item.quality for item in items])
 
     def test_diverge_do_legado_de_proposito(self):
         """O legado tratava um item conjurado como item comum (perdia 1)."""
@@ -145,16 +157,16 @@ class InventarioTest(ItemTestCase):
         items = [
             Item(NORMAL_ITEM, 10, 20),
             Item(AGED_BRIE, 10, 20),
-            Item(CONJURED_ITEM, 10, 20),
+            Item(BACKSTAGE_PASSES, 10, 20),
         ]
         GildedRose(items).update_quality()
-        self.assertEqual([19, 21, 18], [item.quality for item in items])
+        self.assertEqual([19, 21, 22], [item.quality for item in items])
 
     def test_inventario_vazio_nao_quebra(self):
         GildedRose([]).update_quality()
 
     def test_a_qualidade_permanece_entre_zero_e_cinquenta(self):
-        names = [NORMAL_ITEM, AGED_BRIE, BACKSTAGE_PASSES, CONJURED_ITEM]
+        names = [NORMAL_ITEM, AGED_BRIE, BACKSTAGE_PASSES]
         items = [Item(name, 12, 25) for name in names]
         store = GildedRose(items)
         for _ in range(60):
@@ -188,6 +200,26 @@ class ExtensibilidadeTest(unittest.TestCase):
             self.assertIsInstance(updater_for(item), FrozenItemUpdater)
         finally:
             _updaters.remove(FrozenItemUpdater)
+
+    def test_recusa_um_item_reconhecido_por_dois_updaters(self):
+        """A regra de um item nao pode depender da ordem das classes no arquivo."""
+        from gilded_rose import register
+        from gilded_rose.registry import _updaters
+        from gilded_rose.updaters import StandardItemUpdater
+
+        @register
+        class ConjuredCheeseUpdater(StandardItemUpdater):
+            @classmethod
+            def matches(cls, name):
+                return name.startswith("Conjured")
+
+        try:
+            with self.assertRaises(LookupError) as raised:
+                GildedRose([Item("Conjured Mana Cake", 5, 20)]).update_quality()
+            self.assertIn("ConjuredItemUpdater", str(raised.exception))
+            self.assertIn("ConjuredCheeseUpdater", str(raised.exception))
+        finally:
+            _updaters.remove(ConjuredCheeseUpdater)
 
     def test_itens_desconhecidos_usam_a_regra_padrao(self):
         from gilded_rose.updaters import StandardItemUpdater

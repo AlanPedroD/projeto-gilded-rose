@@ -9,16 +9,7 @@ from abc import ABC, abstractmethod
 from . import quality
 from .item import Item
 from .registry import register, register_default
-from .rules import (
-    AGED_BRIE,
-    BACKSTAGE_FIRST_TIER_DAYS,
-    BACKSTAGE_PASSES,
-    BACKSTAGE_SECOND_TIER_DAYS,
-    CONJURED_PREFIX,
-    EXPIRED_MULTIPLIER,
-    LAST_SELLABLE_DAY,
-    SULFURAS,
-)
+from .rules import EXPIRED_MULTIPLIER, LAST_SELLABLE_DAY
 
 
 class ItemUpdater(ABC):
@@ -28,14 +19,17 @@ class ItemUpdater(ABC):
     que ainda restavam, e so depois o prazo de venda avanca.
     """
 
+    # Nome exato do item que este updater reconhece.
+    NAME = None
+
     def update(self, item: Item) -> None:
         self._change_quality(item)
         self._advance_sell_in(item)
 
-    @staticmethod
-    @abstractmethod
-    def matches(name: str) -> bool:
+    @classmethod
+    def matches(cls, name: str) -> bool:
         """Este updater e responsavel por um item com este nome?"""
+        return name == cls.NAME
 
     @abstractmethod
     def _change_quality(self, item: Item) -> None:
@@ -56,8 +50,8 @@ class StandardItemUpdater(ItemUpdater):
 
     DAILY_DEGRADATION = 1
 
-    @staticmethod
-    def matches(name: str) -> bool:
+    @classmethod
+    def matches(cls, name: str) -> bool:
         return True
 
     def _change_quality(self, item: Item) -> None:
@@ -74,21 +68,19 @@ class ConjuredItemUpdater(StandardItemUpdater):
     """Item conjurado: degrada duas vezes mais rapido que um item comum."""
 
     DAILY_DEGRADATION = StandardItemUpdater.DAILY_DEGRADATION * 2
+    NAME_PREFIX = "Conjured"
 
-    @staticmethod
-    def matches(name: str) -> bool:
-        return name.startswith(CONJURED_PREFIX)
+    @classmethod
+    def matches(cls, name: str) -> bool:
+        return name.startswith(cls.NAME_PREFIX)
 
 
 @register
 class AgedBrieUpdater(ItemUpdater):
     """Aged Brie: valoriza com o tempo, e mais rapido depois de vencido."""
 
+    NAME = "Aged Brie"
     DAILY_APPRECIATION = 1
-
-    @staticmethod
-    def matches(name: str) -> bool:
-        return name == AGED_BRIE
 
     def _change_quality(self, item: Item) -> None:
         quality.increase(item, self._appreciation_for(item))
@@ -103,13 +95,14 @@ class AgedBrieUpdater(ItemUpdater):
 class BackstagePassUpdater(ItemUpdater):
     """Ingressos: valorizam conforme o show se aproxima e viram po depois dele."""
 
+    NAME = "Backstage passes to a TAFKAL80ETC concert"
+
+    # Dias restantes ate o show -> quanto o ingresso valoriza por dia.
+    NEAR_SHOW_DAYS = 10
+    IMMINENT_SHOW_DAYS = 5
     BASE_APPRECIATION = 1
     NEAR_SHOW_APPRECIATION = 2
     IMMINENT_SHOW_APPRECIATION = 3
-
-    @staticmethod
-    def matches(name: str) -> bool:
-        return name == BACKSTAGE_PASSES
 
     def _change_quality(self, item: Item) -> None:
         if self._is_expired(item):
@@ -119,9 +112,9 @@ class BackstagePassUpdater(ItemUpdater):
 
     @classmethod
     def _appreciation_for(cls, days_remaining: int) -> int:
-        if days_remaining <= BACKSTAGE_SECOND_TIER_DAYS:
+        if days_remaining <= cls.IMMINENT_SHOW_DAYS:
             return cls.IMMINENT_SHOW_APPRECIATION
-        if days_remaining <= BACKSTAGE_FIRST_TIER_DAYS:
+        if days_remaining <= cls.NEAR_SHOW_DAYS:
             return cls.NEAR_SHOW_APPRECIATION
         return cls.BASE_APPRECIATION
 
@@ -130,9 +123,7 @@ class BackstagePassUpdater(ItemUpdater):
 class LegendaryItemUpdater(ItemUpdater):
     """Sulfuras: lendario, nunca e vendido e nunca perde qualidade."""
 
-    @staticmethod
-    def matches(name: str) -> bool:
-        return name == SULFURAS
+    NAME = "Sulfuras, Hand of Ragnaros"
 
     def update(self, item: Item) -> None:
         """Um item lendario nao muda: nem sell_in, nem quality."""
